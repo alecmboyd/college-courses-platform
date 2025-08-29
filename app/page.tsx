@@ -28,7 +28,7 @@ export default async function Home() {
       .eq('status', 'enrolled')
     
     enrollments = enrollmentData || []
-  } catch (error) {
+  } catch (error: any) {
     console.log('Enrollments table may not exist yet:', error.message)
   }
 
@@ -40,7 +40,7 @@ export default async function Home() {
       .single()
     
     profile = profileData
-  } catch (error) {
+  } catch (error: any) {
     console.log('Profile may not exist yet, will create:', error.message)
     // Create profile if it doesn't exist
     try {
@@ -55,7 +55,7 @@ export default async function Home() {
         .select()
         .single()
       profile = newProfile
-    } catch (createError) {
+    } catch (createError: any) {
       console.log('Could not create profile:', createError.message)
     }
   }
