@@ -1,55 +1,58 @@
-# Alec Boyd Platform - Migrated to Supabase
+# College Courses Platform
 
-This platform has been migrated from Base44 to Supabase for better control and extensibility.
-
-## Quick Start
-
-1. **Set up Supabase:**
-   - Create a project at [supabase.com](https://supabase.com)
-   - Follow the instructions in `SETUP_GUIDE.md`
-
-2. **Configure environment:**
-   - Copy your Supabase credentials to `.env.local`
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=your_project_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-   ```
-
-3. **Install and run:**
-   ```bash
-   npm install
-   npm run dev
-   ```
-
-4. **Access the app:**
-   - Open [http://localhost:3000](http://localhost:3000)
-   - Create an account or sign in
-
-## Project Structure
-
-- `/app` - Next.js 14 app directory with pages and routes
-- `/components` - React components
-- `/lib/supabase` - Supabase client configuration
-- `/types` - TypeScript type definitions
-- `/utils` - Utility functions
+A modern course management system built with Next.js, Supabase, and Tailwind CSS.
 
 ## Features
 
-- User authentication (signup/login)
-- Protected routes
-- Server-side rendering with Supabase
-- Responsive UI with Tailwind CSS
+- 🔐 User Authentication (Signup/Login)
+- 📚 Browse Course Catalog
+- ✅ Course Enrollment System
+- 📅 Personal Schedule Management
+- 👤 User Profile Management
+- 💾 Persistent Data Storage
+- 🔒 Secure User Data Isolation
+
+## Technology Stack
+
+- **Frontend**: Next.js 14, React, Tailwind CSS
+- **Backend**: Supabase (PostgreSQL, Auth, Realtime)
+- **Deployment**: Vercel
+- **Database**: PostgreSQL (hosted on Supabase)
+
+## Available Courses
+
+The platform includes 10 sample courses across 8 departments:
+- Computer Science
+- Mathematics
+- Biology
+- Chemistry
+- English
+- History
+- Physics
+- Psychology
+
+## Live Demo
+
+Visit: https://college-courses.vercel.app
+
+## Local Development
+
+```bash
+npm install
+npm run dev
+```
+
+## Environment Variables
+
+Required environment variables (see `.env.local.example`):
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
 
 ## Deployment
 
-This app can be deployed to:
-- Vercel (recommended)
-- Netlify
-- Any Node.js hosting provider
+This project is configured for automatic deployment on Vercel with GitHub integration.
 
-## Migration from Base44
+---
 
-To migrate your data from Base44:
-1. Export your data from Base44 (check their documentation)
-2. Transform the data to match Supabase schema
-3. Import using Supabase Dashboard or API
+Last updated: August 2024
