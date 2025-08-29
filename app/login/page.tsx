@@ -101,6 +101,12 @@ export default function LoginPage() {
             </div>
           </div>
 
+          <div className="flex items-center justify-between">
+            <Link href="/auth/reset-password" className="text-sm text-primary hover:text-primary/80">
+              Forgot your password?
+            </Link>
+          </div>
+
           <div>
             <button
               type="submit"
