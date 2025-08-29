@@ -29,7 +29,7 @@ export default function SignupPage() {
       email,
       password,
       options: {
-        emailRedirectTo: `${location.origin}/auth/callback`,
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://college-courses.vercel.app')}/auth/callback`,
       },
     })
 
