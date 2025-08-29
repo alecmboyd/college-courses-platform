@@ -25,19 +25,41 @@ export default function SignupPage() {
 
     setLoading(true)
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://college-courses.vercel.app')}/auth/callback`,
-      },
-    })
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://college-courses.vercel.app')}/auth/callback`,
+        },
+      })
 
-    if (error) {
-      setError(error.message)
+      if (error) {
+        setError(error.message)
+        setLoading(false)
+      } else if (data.user) {
+        // Since autoconfirm is enabled, user should be logged in immediately
+        console.log('Signup successful for user:', data.user.email)
+        
+        // Initialize database tables if needed
+        try {
+          await fetch('/api/init-db', { method: 'POST' })
+        } catch (initError) {
+          console.log('Database initialization skipped:', initError)
+        }
+
+        // Check if user needs email confirmation
+        if (data.user.email_confirmed_at) {
+          // User is confirmed, redirect to dashboard
+          window.location.href = '/'
+        } else {
+          // User needs to confirm email
+          router.push('/login?message=Check your email to confirm your account')
+        }
+      }
+    } catch (err: any) {
+      setError('An unexpected error occurred: ' + err.message)
       setLoading(false)
-    } else {
-      router.push('/login?message=Check your email to confirm your account')
     }
   }
 

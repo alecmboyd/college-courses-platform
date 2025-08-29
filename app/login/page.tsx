@@ -18,17 +18,31 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
 
-    if (error) {
-      setError(error.message)
+      if (error) {
+        setError(error.message)
+        setLoading(false)
+      } else if (data.user) {
+        // Successfully logged in
+        console.log('Login successful for user:', data.user.email)
+        // Initialize database tables if needed
+        try {
+          await fetch('/api/init-db', { method: 'POST' })
+        } catch (initError) {
+          console.log('Database initialization skipped:', initError)
+        }
+        
+        // Redirect to home page
+        window.location.href = '/'
+      }
+    } catch (err: any) {
+      setError('An unexpected error occurred: ' + err.message)
       setLoading(false)
-    } else {
-      router.push('/')
-      router.refresh()
     }
   }
 
