@@ -49,13 +49,15 @@ export default function ProfileContent({ user, profile, enrollments }: ProfileCo
   const [emailChangeRequested, setEmailChangeRequested] = useState(false)
   const [newEmail, setNewEmail] = useState('')
   const [verificationSent, setVerificationSent] = useState(false)
+  const [hasChanges, setHasChanges] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const supabase = createClient()
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
+    setSaveStatus('saving')
     setError(null)
 
     const { error } = await supabase
@@ -66,12 +68,19 @@ export default function ProfileContent({ user, profile, enrollments }: ProfileCo
     if (error) {
       setError('Failed to update profile. Please try again.')
       console.error('Profile update error:', error)
+      setSaveStatus('idle')
     } else {
-      setEditing(false)
+      setSaveStatus('saved')
+      setHasChanges(false)
+      
+      // Show "Saved" for 2 seconds, then reset
+      setTimeout(() => {
+        setSaveStatus('idle')
+        setEditing(false)
+      }, 2000)
+      
       router.refresh()
     }
-    
-    setLoading(false)
   }
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -123,7 +132,7 @@ export default function ProfileContent({ user, profile, enrollments }: ProfileCo
       return
     }
 
-    setLoading(true)
+    setSaveStatus('saving')
     setError(null)
 
     try {
@@ -138,12 +147,24 @@ export default function ProfileContent({ user, profile, enrollments }: ProfileCo
 
       setVerificationSent(true)
       setEmailChangeRequested(false)
+      setSaveStatus('saved')
+      setTimeout(() => setSaveStatus('idle'), 2000)
     } catch (error: any) {
       console.error('Email change error:', error)
       setError(error.message || 'Failed to send verification email')
-    } finally {
-      setLoading(false)
+      setSaveStatus('idle')
     }
+  }
+
+  // Handle input changes to detect modifications
+  const handleFullNameChange = (value: string) => {
+    setFullName(value)
+    setHasChanges(value !== (profile?.full_name || ''))
+  }
+
+  const handleEmailChange = (value: string) => {
+    setNewEmail(value)
+    setHasChanges(value !== user.email && value.length > 0)
   }
 
   // Calculate statistics
@@ -268,8 +289,8 @@ export default function ProfileContent({ user, profile, enrollments }: ProfileCo
                   <input
                     type="text"
                     value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    onChange={(e) => handleFullNameChange(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
                     placeholder="Enter your full name"
                   />
                 </div>
@@ -283,27 +304,50 @@ export default function ProfileContent({ user, profile, enrollments }: ProfileCo
                       <input
                         type="email"
                         value={newEmail}
-                        onChange={(e) => setNewEmail(e.target.value)}
+                        onChange={(e) => handleEmailChange(e.target.value)}
                         placeholder="Enter new email address"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
                       />
                       <div className="flex gap-2">
                         <button
                           type="button"
                           onClick={handleEmailChangeRequest}
-                          disabled={loading}
-                          className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50"
+                          disabled={saveStatus === 'saving'}
+                          className={`px-4 py-2 text-sm rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
+                            saveStatus === 'saved'
+                              ? 'bg-green-600 text-white'
+                              : saveStatus === 'saving'
+                              ? 'bg-primary/80 text-white cursor-not-allowed'
+                              : 'bg-primary text-white hover:bg-primary/90'
+                          }`}
                         >
-                          {loading ? 'Sending...' : 'Send Verification'}
+                          {saveStatus === 'saving' && (
+                            <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                          )}
+                          {saveStatus === 'saved' && (
+                            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                          {saveStatus === 'saving' 
+                            ? 'Sending...' 
+                            : saveStatus === 'saved' 
+                            ? 'Sent!' 
+                            : 'Send Verification'
+                          }
                         </button>
                         <button
                           type="button"
                           onClick={() => {
                             setEmailChangeRequested(false)
                             setNewEmail('')
+                            setHasChanges(false)
                             setError(null)
                           }}
-                          className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+                          className="px-4 py-2 text-sm border border-gray-300 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors"
                         >
                           Cancel
                         </button>
@@ -344,26 +388,55 @@ export default function ProfileContent({ user, profile, enrollments }: ProfileCo
                   </div>
                 )}
 
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    {loading ? 'Saving...' : 'Save Changes'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditing(false)
-                      setFullName(profile?.full_name || '')
-                      setError(null)
-                    }}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                </div>
+                {/* Dynamic Save Button - Only show when there are changes */}
+                {hasChanges && (
+                  <div className="flex gap-3 pt-4 border-t border-gray-200">
+                    <button
+                      type="submit"
+                      disabled={saveStatus === 'saving'}
+                      className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
+                        saveStatus === 'saved'
+                          ? 'bg-green-600 text-white'
+                          : saveStatus === 'saving'
+                          ? 'bg-primary/80 text-white cursor-not-allowed'
+                          : 'bg-primary text-white hover:bg-primary/90 hover:shadow-md transform hover:scale-105'
+                      }`}
+                    >
+                      {saveStatus === 'saving' && (
+                        <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      )}
+                      {saveStatus === 'saved' && (
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                      {saveStatus === 'saving' 
+                        ? 'Saving...' 
+                        : saveStatus === 'saved' 
+                        ? 'Saved!' 
+                        : 'Save Changes'
+                      }
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditing(false)
+                        setFullName(profile?.full_name || '')
+                        setNewEmail('')
+                        setEmailChangeRequested(false)
+                        setHasChanges(false)
+                        setError(null)
+                        setSaveStatus('idle')
+                      }}
+                      className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-colors font-medium"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
               </div>
             </form>
           ) : (
@@ -406,7 +479,7 @@ export default function ProfileContent({ user, profile, enrollments }: ProfileCo
 
               <button
                 onClick={() => setEditing(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 hover:shadow-md transform hover:scale-105 transition-all duration-200 font-medium"
               >
                 Edit Profile
               </button>
